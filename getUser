@@ -1,0 +1,15 @@
+#!/bin/sh
+
+if [ ! '(' "${DHOST}" -a "${DLOGIN}" -a "${DPASS}" ')' ] ; then
+	echo "Error: env vars (DHOST, DLOGIN and DPASS) are not set ... aborting"
+	exit 1
+fi
+
+if [ $# -ne 1 ] ; then
+	URL="http://${DHOST}/odata/v1/Users"
+else
+	URL="http://${DHOST}/odata/v1/Users('$1')"
+fi
+
+curl --basic -u ${DLOGIN}:${DPASS} "${URL}" 2>/dev/null \
+   | xmllint --format -

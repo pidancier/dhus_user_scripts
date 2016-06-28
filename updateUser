@@ -1,0 +1,22 @@
+#!/bin/bash
+
+if [ ! '(' "${DHOST}" -a "${DLOGIN}" -a "${DPASS}" ')' ] ; then
+	echo "Error: env vars (DHOST, DLOGIN and DPASS) are not set ... aborting"
+	exit 1
+fi
+
+if [ $# -lt 2 ] ; then
+	echo "Error: this script requires at least 2 parameters"
+	exit 2
+fi
+
+KEY=$1
+shift 1
+
+m4 -D_KEY=$KEY "$@" body.txt > body.tmp
+
+curl -X PUT --basic -u ${DLOGIN}:${DPASS} -d @body.tmp \
+   --header "Content-Type:application/atom+xml" \
+   "http://${DHOST}/odata/v1/Users('$KEY')"
+
+rm body.tmp

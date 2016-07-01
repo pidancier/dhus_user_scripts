@@ -1,0 +1,53 @@
+#!/bin/bash
+
+USAGE="Usage: $0 <source connection infos> <destination connection infos> <username>
+
+   Synchronise DHuS user 'username' from source to destination.
+
+   Connection infos syntax: http[s]://login:password@host/odata/v1"
+
+if [ $# -lt 3 ] ; then
+    echo "$USAGE"
+    exit 1
+fi
+
+USERNAME=$3
+
+# To extract an URL without credentials
+EXTRACT_URL_PATTERN='s#(https?://)?.+?:.+?@(.+)#\1\2#'
+# To extract credentials
+EXTRACT_CRED_PATTERN='s#(https?://)?(.+?:.+?)@.+#\2#'
+
+SRC_URL="$(echo $1 | sed -r ${EXTRACT_URL_PATTERN})/Users('${USERNAME}')"
+SRC_CRED="$(echo $1 | sed -r ${EXTRACT_CRED_PATTERN})"
+
+DST_URL="$(echo $2 | sed -r ${EXTRACT_URL_PATTERN})/Users('${USERNAME}')"
+DST_CRED="$(echo $2 | sed -r ${EXTRACT_CRED_PATTERN})"
+
+# fetch filename.xml user:password http://...
+fetch() {
+    curl -f -s -S -o $1 --basic $2 "$3"
+    if [ $^ -neq 0 ] ; then
+        echo "failed to fetch XML doc from source DHuS"
+        return 1
+    fi
+	return 0
+}
+
+# fetch user to sync
+fetch src.xml $SRC_CRED $SRC_URL
+if [ $^ -neq 0 ] ; then exit 2 ; fi
+
+# see if destination is OK, figures out if we need to create or update the user
+fetch dst.xml $DST_CRED $DST_URL
+METHOD=PUT
+if [ $^ -neq 0 ] ; then
+	# TODO: we should test for 404 status code, otherwise this condition is fulfilled by every kind of error!
+	METHOD=POST
+    echo "User $username does not exist on the destination DHuS, the User EntitySet does not support the CREATE operation yet."
+	exit 3
+if
+
+curl -f -s -S
+
+rm dst.xml
